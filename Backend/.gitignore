@@ -1,0 +1,17 @@
+# Python environment tracking settings
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+ENV/
+
+# Development local database (Heavy testing load bypass)
+db.sqlite3
+
+# User dynamic uploads (Profile images storage directory)
+media/
+staticfiles/
+
+# Local configuration environment secrets
+.env
