@@ -61,12 +61,6 @@ const TasksPage = () => {
 
             </div>
 
-            <div className="mt-4">
-                <button className="bg-purple-600 px-5 py-3 rounded-lg hover:bg-purple-700 transition">
-                    Generate Study Plan
-                </button>
-            </div>
-
             <TasksArray
                 search={search}
                 filter={filter}
