@@ -7,6 +7,7 @@ const Login = () => {
     formData,
     handleChange,
     handleLogin,
+    passwordError
   } = useContext(AuthContext);
 
   return (
@@ -38,7 +39,6 @@ const Login = () => {
             className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg outline-none border border-gray-600 focus:border-blue-500"
           />
 
-          {/* Password */}
           <input
             type="password"
             name="password"
@@ -48,8 +48,13 @@ const Login = () => {
             required
             className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg outline-none border border-gray-600 focus:border-blue-500"
           />
+          
+          {passwordError && (
+            <div className="bg-red-500/10 border border-red-500 text-red-400 px-4 py-2 rounded-lg text-sm">
+              {passwordError}
+            </div>
+          )}
 
-          {/* Forgot Password */}
           <div className="flex justify-end">
             <Link
               to="/forgot-password"
@@ -59,7 +64,6 @@ const Login = () => {
             </Link>
           </div>
 
-          {/* Login Button */}
           <button
             type="submit"
             className="w-full bg-green-600 py-3 text-white rounded-lg font-semibold hover:bg-green-700 transition active:scale-95"
@@ -69,7 +73,6 @@ const Login = () => {
 
         </form>
 
-        {/* Signup */}
         <p className="text-center text-gray-400 mt-6">
           Don't have an account?
 

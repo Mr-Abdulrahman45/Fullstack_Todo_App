@@ -5,6 +5,13 @@ from .serializers import LoginSerializer,RegisterSerializer,UserProfileUpdateSer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import User
+from .models import PasswordResetOTP
+from django.core.mail import send_mail
+import random
+from django.utils import timezone
+from datetime import timedelta
+
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -96,3 +103,42 @@ def change_password(request):
         return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
 
     return Response({"error": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    email= request.data.get('email')
+    try:
+        user = User.objects.get(email=email)
+        otp = random.randint(100000, 999999)
+        expires_at = timezone.now() + timedelta(minutes=5)
+        PasswordResetOTP.objects.create(user=user, otp=otp, expires_at=expires_at)
+        subject = 'Password Reset OTP'
+        msg = f'Your OTP for password reset is: {otp}. It will expire in 5 minutes.'
+        recipient = [user.email]
+
+        send_mail(subject=subject, message=msg, from_email=None, recipient_list=recipient)
+        return Response({"message": "OTP has been sent to your email."}, status=status.HTTP_200_OK)
+        
+
+    except User.DoesNotExist:
+        return Response({"error": "User with that email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_otp(request):
+    email = request.data.get('email')
+    otp = request.data.get('otp')
+
+    try:
+        user = User.objects.get(email=email)
+        otp_entry = PasswordResetOTP.objects.filter(user=user, otp=otp).first()
+
+        if otp_entry and otp_entry.expires_at > timezone.now():
+            return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+    except User.DoesNotExist:
+        return Response({"error": "User with that email does not exist."}, status=status.HTTP_404_NOT_FOUND)

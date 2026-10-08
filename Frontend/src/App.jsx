@@ -7,6 +7,7 @@ import Profile from './assets/pages/Profile'
 import Login from './assets/pages/LoginPage'
 import Signup from './assets/pages/SignupPage'
 import ProtectedRoute from './assets/pages/ProtectedRoute'
+import Forgot_password from './assets/pages/Forgot_password'
 
 
 const App = () => {
@@ -46,6 +47,16 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/forgot-password"
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <Forgot_password/>
+            </ProtectedRoute>
+          }
+        />
+
       </Routes>
     </>
   )

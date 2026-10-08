@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 
 import rest_framework
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-7wuv@gvlna^%hn1y^*z)erbcci-i$-rbf2%%w=fk7=o2oo4^(c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -129,11 +129,7 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':(
@@ -145,10 +141,29 @@ REST_FRAMEWORK = {
 }
 
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://localhost:3000']
 
-CORS_ALLOWED_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+# email setting
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER ='arg165858@gmail.com'
+EMAIL_HOST_PASSWORD = 'noyl mqef fjgp cpku'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+
+
 

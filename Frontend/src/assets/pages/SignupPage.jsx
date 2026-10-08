@@ -1,8 +1,6 @@
 import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../Context/AuthContext";
-import eye from '../../../public/eye.png';
-import eyeSlash from '../../../public/eye-slash.png';
 
 const Signup = () => {
     const {
@@ -68,7 +66,7 @@ const Signup = () => {
                         onChange={handleChange}
                         required
                         className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg outline-none border border-gray-600 focus:border-blue-500"
-                    /><img src={eye} alt="Eye" className="absolute right-3 top-3 cursor-pointer" width={30}/>
+                    />
                     </div>
 
                     {passwordError && (

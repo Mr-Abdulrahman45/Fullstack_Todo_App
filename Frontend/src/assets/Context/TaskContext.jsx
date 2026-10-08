@@ -32,6 +32,7 @@ const TaskProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    if(!localStorage.getItem('access_token')) return;
     getTasks();
   }, []);
 
