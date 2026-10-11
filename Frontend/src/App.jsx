@@ -7,6 +7,8 @@ import Profile from './assets/pages/Profile'
 import Login from './assets/pages/LoginPage'
 import Signup from './assets/pages/SignupPage'
 import ProtectedRoute from './assets/pages/ProtectedRoute'
+import Forgot_password from './assets/pages/Forgot_password'
+import PublicRoute from './assets/pages/PublicRoute'
 
 
 const App = () => {
@@ -14,8 +16,8 @@ const App = () => {
     <>
 
       <Routes>
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
         <Route
           path="/"
@@ -46,6 +48,16 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/forgot-password"
+          element={
+            <>
+              <Navbar />
+              <Forgot_password />
+            </>
+          }
+        />
+
       </Routes>
     </>
   )

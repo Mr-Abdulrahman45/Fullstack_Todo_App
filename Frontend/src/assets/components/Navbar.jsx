@@ -66,7 +66,7 @@ const Navbar = () => {
             >
               Tasks
             </Link>
-
+            <div>{user}</div>
             <Link
               to="/profile"
               onClick={() => setMenuOpen(false)}

@@ -10,7 +10,7 @@ const Profile = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const [showEdit, setShowEdit] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     // Inline Message Div States
@@ -28,7 +28,7 @@ const Profile = () => {
         confirm_password: "",
     });
 
-    // Alert Messages ko display aur auto-dismiss karne ki utility
+
     const showInlineMessage = (type, text) => {
         if (type === "success") {
             setSuccessMsg(text);
@@ -78,7 +78,7 @@ const Profile = () => {
         try {
             const response = await api.patch("profile/update_user_profile/", editData);
             setUser(response.data);
-            setShowEdit(false);
+            setIsEditing(false);
             showInlineMessage("success", "Profile updated successfully!");
         } catch (error) {
             const serverError = error.response?.data;
@@ -96,7 +96,7 @@ const Profile = () => {
             showInlineMessage("error", "New passwords do not match.");
             return;
         }
-        if (passwordData.new_password.length < 8) {
+        if (passwordData.new_password.length < 8 ) {
             showInlineMessage("error", "Password must be at least 8 characters.");
             return;
         }
@@ -117,20 +117,12 @@ const Profile = () => {
         }
     };
 
-    // Logout
     const handleLogout = async () => {
-        try {
-            const refreshToken = localStorage.getItem("refresh_token");
-            if (refreshToken) {
-                await api.post("logout/", { refresh: refreshToken });
-            }
-        } catch (error) {
-            console.log("Logout Error:", error.response?.data || error.message);
-        } finally {
+        
             localStorage.removeItem("access_token");
             localStorage.removeItem("refresh_token");
             navigate("/login", { replace: true });
-        }
+        
     };
 
     if (loading) {
@@ -142,23 +134,12 @@ const Profile = () => {
     }
 
     return (
+        
         <div className="min-h-screen bg-gray-900 text-white p-5">
             <h1 className="text-3xl font-bold mb-6">My Profile</h1>
             <div className="max-w-4xl mx-auto">
 
-                {/* Inline Message Panels */}
-                {successMsg && (
-                    <div className="bg-green-900 border border-green-600 text-green-200 p-4 rounded-xl mb-4 shadow">
-                        ✅ {successMsg}
-                    </div>
-                )}
-                {errorMsg && (
-                    <div className="bg-red-900 border border-red-600 text-red-200 p-4 rounded-xl mb-4 shadow">
-                        ❌ {errorMsg}
-                    </div>
-                )}
-
-                {/* Profile Detail Box */}
+              
                 <div className="bg-gray-800 rounded-2xl p-8 shadow-md">
                     <div className="flex flex-col md:flex-row items-center gap-6">
                         <img
@@ -168,8 +149,8 @@ const Profile = () => {
                         />
                         <div>
                             <h2 className="text-2xl font-bold">{user?.username}</h2>
-                            <p className="text-gray-400 mt-1">{user?.email}</p>
                             <p className="text-gray-500 text-sm mt-2">Name: {user?.first_name || "Not Set"}</p>
+                            <p className="text-gray-400 mt-1">{user?.email}</p>
                         </div>
                     </div>
                 </div>
@@ -190,17 +171,15 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {/* Actions Trigger Panel */}
                 <div className="bg-gray-800 rounded-xl p-6 mt-6 shadow-md">
                     <h2 className="text-xl font-semibold mb-4">Account Actions</h2>
                     <div className="flex flex-wrap gap-3">
-                        <button onClick={() => { setShowEdit(!showEdit); setShowPassword(false); }} className="bg-blue-600 px-5 py-3 rounded-lg hover:bg-blue-700 transition active:scale-95">Edit Profile</button>
-                        <button onClick={() => { setShowPassword(!showPassword); setShowEdit(false); }} className="bg-yellow-600 px-5 py-3 rounded-lg hover:bg-yellow-700 text-black font-semibold transition active:scale-95">Change Password</button>
+                        <button onClick={() => { setIsEditing(!isEditing); setShowPassword(false); }} className="bg-blue-600 px-5 py-3 rounded-lg hover:bg-blue-700 transition active:scale-95">Edit Profile</button>
+                        <button onClick={() => { setShowPassword(!showPassword); setIsEditing(false); }} className="bg-yellow-600 px-5 py-3 rounded-lg hover:bg-yellow-700 text-black font-semibold transition active:scale-95">Change Password</button>
                         <button onClick={handleLogout} className="bg-red-600 px-5 py-3 rounded-lg hover:bg-red-700 transition active:scale-95">Logout</button>
                     </div>
 
-                    {/* Inline Edit Form Panel */}
-                    {showEdit && (
+                    {isEditing && (
                         <form onSubmit={handleUpdateProfile} className="bg-gray-700 p-5 rounded-lg space-y-4 border border-gray-600 mt-5">
                             <h3 className="text-lg font-medium text-blue-400">Update Personal Details</h3>
                             <div>
@@ -215,7 +194,6 @@ const Profile = () => {
                         </form>
                     )}
 
-                    {/* Inline Change Password Form Panel */}
                     {showPassword && (
                         <form onSubmit={handleChangePassword} className="bg-gray-700 p-5 rounded-lg space-y-4 border border-gray-600 mt-5">
                             <h3 className="text-lg font-medium text-yellow-400">Change Password Securely</h3>
@@ -238,7 +216,16 @@ const Profile = () => {
                     )}
                 </div>
             </div>
+            {errorMsg && (<div className="bg-red-500/10 border border-red-500 text-red-400 px-4 py-2 rounded-lg text-sm">
+            {errorMsg}
+            </div>
+            )}
+            {successMsg && (<div className="bg-red-500/10 border border-green-500 text-green-400 px-4 py-2 rounded-lg text-sm">
+            {successMsg}
+            </div>
+            )}
         </div>
+
     );
 }
 

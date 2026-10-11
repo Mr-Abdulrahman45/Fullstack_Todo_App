@@ -75,26 +75,15 @@ const AuthProvider = ({ children }) => {
 
   // Password Validation
   const validatePassword = (password) => {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters";
-    }
+ 
+    if (password.length < 8 || !/[A-Z]/.test(password) || 
+    !/[a-z]/.test(password) || 
+    !/[0-9]/.test(password) ||
+    !/[!@#$%^&*(),.?":{}|<>]/.test(password)
 
-    if (!/[A-Z]/.test(password)) {
-      return "Password must contain an uppercase letter";
+    ) {
+      return "Password must be at least 8 characters. Also must contain an uppercase and a lowercase letters and a number and  .";
     }
-
-    if (!/[a-z]/.test(password)) {
-      return "Password must contain a lowercase letter";
-    }
-
-    if (!/[0-9]/.test(password)) {
-      return "Password must contain a number";
-    }
-
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      return "Password must contain a special character";
-    }
-
     return "";
   };
 
@@ -183,11 +172,9 @@ const AuthProvider = ({ children }) => {
       );
 
       navigate("/");
-    } catch (error) {
-      console.log(
-        "Login Error:",
-        error.response?.data || error.message
-      );
+    } catch (error){
+      console.log(error.response?.data)
+      setPasswordError(error.response?.data.non_field_errors[0] || 'invalid username or password')
     }
   };
 
