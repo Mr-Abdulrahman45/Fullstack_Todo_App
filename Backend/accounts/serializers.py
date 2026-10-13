@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from .models import UserProfile
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,6 +38,12 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email'] 
+
+
+class profile_picture_serializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['profile_picture']
 
 
     

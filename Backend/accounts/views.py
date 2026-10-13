@@ -10,6 +10,8 @@ from django.core.mail import send_mail
 import random
 from django.utils import timezone
 from datetime import timedelta
+from .serializers import profile_picture_serializer
+from .models import UserProfile
 
 
 
@@ -45,6 +47,7 @@ def login(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def check_username(request):
+    
     username = request.data.get("username", "").strip()
 
     if not username:
@@ -59,25 +62,45 @@ def check_username(request):
         "available": not exists
     }, status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_profile(request):
     user = request.user
-    
+
+    profile = UserProfile.objects.filter(user=user).first()
+
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+
+    if profile and profile.profile_picture:
+        picture = request.build_absolute_uri(profile.profile_picture.url)
+        picture_status = "updated"
+
+    else:
+        picture = '/media/profile_pictures/default.jpg'
+        picture_status = "default"
+
+
     return Response({
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
-    })    
+        'profile_picture': picture,
+        'picture_status': picture_status
+    })
+
+  
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_user_profile(request):
     if request.method == 'PATCH':
         user = request.user
-        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+        print(request.content_type)
+        print(request.data)
+        serializer = UserProfileUpdateSerializer(user, data=request.data,)
     
         if serializer.is_valid():
             serializer.save()
@@ -86,6 +109,35 @@ def update_user_profile(request):
             }, status=status.HTTP_200_OK)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_profile_picture(request):
+    profile = UserProfile.objects.get(
+        user=request.user
+    )
+
+    serializer = profile_picture_serializer(
+        profile,
+        data=request.data,
+    )
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "message": "Profile picture updated successfully",
+            "profile_picture": request.build_absolute_uri(
+                serializer.instance.profile_picture.url
+            )
+        }, status=status.HTTP_200_OK)
+
+    return Response(
+        serializer.errors,
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

@@ -7,7 +7,7 @@ export const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
+  const [signupData, setSignupData] = useState({
     full_name: "",
     username: "",
     email: "",
@@ -15,135 +15,207 @@ const AuthProvider = ({ children }) => {
     confirmPassword: "",
   });
 
+  const [loginData, setLoginData] = useState({
+    username: "",
+    password: "",
+  });
+
   const [usernameStatus, setUsernameStatus] = useState("");
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({
+  const handleSignupChange = (e) => {
+    const { name, value } = e.target;
+
+    setSignupData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
 
-    if (e.target.name === "password") {
-      setPasswordError("");
-    }
+    setPasswordError("");
   };
 
-  // Username Checking
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+
+    setLoginData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setPasswordError("");
+  };
+
+  
   useEffect(() => {
-    const username = formData.username.trim();
+    const username = signupData.username.trim();
 
     if (!username) {
       setUsernameStatus("");
+      setUsernameChecking(false);
       return;
     }
 
-    if (username.length < 3) {
-      setUsernameStatus("invalid");
+    if (username.length < 4) {
+      setUsernameStatus("invalid , username must be contain ateleast 4 chracters ");
+      setUsernameChecking(false);
       return;
     }
+
+    let cancelled = false;
+
+    setUsernameStatus("");
+    setUsernameChecking(true);
 
     const timer = setTimeout(async () => {
-      setUsernameChecking(true);
-
       try {
-        const response = await api.post(
-          "check-username/",
-          { username }
-        );
+        const response = await api.post("check-username/", {
+          username,
+        });
 
-        setUsernameStatus(
-          response.data.available
-            ? "available"
-            : "taken"
-        );
+        if (!cancelled) {
+          setUsernameStatus(
+            response.data.available ? "available" : "taken"
+          );
+        }
       } catch (error) {
-        console.log(
-          "Username Check Error:",
-          error.response?.data || error.message
-        );
+        if (!cancelled) {
+          console.error(
+            "Username Check Error:",
+            error.response?.data || error.message
+          );
 
-        setUsernameStatus("error");
+          setUsernameStatus("error");
+        }
       } finally {
-        setUsernameChecking(false);
+        if (!cancelled) {
+          setUsernameChecking(false);
+        }
       }
     }, 500);
 
-    return () => clearTimeout(timer);
-  }, [formData.username]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [signupData.username]);
 
-  // Password Validation
+  // Password validation
   const validatePassword = (password) => {
- 
-    if (password.length < 8 || !/[A-Z]/.test(password) || 
-    !/[a-z]/.test(password) || 
-    !/[0-9]/.test(password) ||
-    !/[!@#$%^&*(),.?":{}|<>]/.test(password)
-
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/[0-9]/.test(password) ||
+      !/[!@#$%^&*(),.?":{}|<>]/.test(password)
     ) {
-      return "Password must be at least 8 characters. Also must contain an uppercase and a lowercase letters and a number and  .";
+      return "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.";
     }
+
     return "";
   };
 
-  // Register
+  const getErrorMessage = (error, fallback) => {
+    const data = error.response?.data;
+
+    if (typeof data === "string") {
+      return data;
+    }
+
+    if (data?.detail) {
+      return data.detail;
+    }
+
+    if (Array.isArray(data?.non_field_errors)) {
+      return data.non_field_errors[0];
+    }
+
+    if (data && typeof data === "object") {
+      for (const value of Object.values(data)) {
+        if (Array.isArray(value) && value.length > 0) {
+          return String(value[0]);
+        }
+
+        if (typeof value === "string") {
+          return value;
+        }
+      }
+    }
+
+    return fallback;
+  };
+
+  // Signup
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setPasswordError("");
 
     if (usernameChecking) {
+      setPasswordError("Please wait while username is being checked.");
       return;
     }
 
     if (usernameStatus === "taken") {
+      setPasswordError("Username is already taken.");
       return;
     }
 
-    const passwordErrorMessage = validatePassword(
-      formData.password
-    );
+    if (usernameStatus === "invalid") {
+      setPasswordError("Username must contain at least 3 characters.");
+      return;
+    }
+
+    if (usernameStatus === "error" || usernameStatus !== "available") {
+      setPasswordError("Please check username availability first.");
+      return;
+    }
+
+    const passwordErrorMessage = validatePassword(signupData.password);
 
     if (passwordErrorMessage) {
       setPasswordError(passwordErrorMessage);
       return;
     }
 
-    if (
-      formData.password !==
-      formData.confirmPassword
-    ) {
-      setPasswordError("Passwords do not match");
+    if (signupData.password !== signupData.confirmPassword) {
+      setPasswordError("Passwords do not match.");
       return;
     }
 
     try {
-      const response = await api.post(
-        "register/",
-        {
-          first_name: formData.full_name,
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }
-      );
+      const response = await api.post("register/", {
+        first_name: signupData.full_name,
+        username: signupData.username.trim(),
+        email: signupData.email.trim(),
+        password: signupData.password,
+      });
 
-      localStorage.setItem(
-        "access_token",
-        response.data.access
-      );
+      if (response.data.access) {
+        localStorage.setItem("access_token", response.data.access);
+      }
 
-      localStorage.setItem(
-        "refresh_token",
-        response.data.refresh
-      );
+      if (response.data.refresh) {
+        localStorage.setItem("refresh_token", response.data.refresh);
+      }
 
+      setSignupData({
+        full_name: "",
+        username: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+
+      setUsernameStatus("");
       navigate("/");
     } catch (error) {
-      console.log(
+      console.error(
         "Registration Error:",
         error.response?.data || error.message
+      );
+
+      setPasswordError(
+        getErrorMessage(error, "Registration failed.")
       );
     }
   };
@@ -151,38 +223,50 @@ const AuthProvider = ({ children }) => {
   // Login
   const handleLogin = async (e) => {
     e.preventDefault();
+    setPasswordError("");
 
     try {
-      const response = await api.post(
-        "login/",
-        {
-          username: formData.username,
-          password: formData.password,
-        }
-      );
+      const response = await api.post("login/", {
+        username: loginData.username.trim(),
+        password: loginData.password,
+      });
 
-      localStorage.setItem(
-        "access_token",
-        response.data.access
-      );
+      if (!response.data.access) {
+        setPasswordError("Login failed: access token not received.");
+        return;
+      }
 
-      localStorage.setItem(
-        "refresh_token",
-        response.data.refresh
-      );
+      localStorage.setItem("access_token", response.data.access);
+
+      if (response.data.refresh) {
+        localStorage.setItem("refresh_token", response.data.refresh);
+      }
+
+      setLoginData({
+        username: "",
+        password: "",
+      });
 
       navigate("/");
-    } catch (error){
-      console.log(error.response?.data)
-      setPasswordError(error.response?.data.non_field_errors[0] || 'invalid username or password')
+    } catch (error) {
+      console.error(
+        "Login Error:",
+        error.response?.data || error.message
+      );
+
+      setPasswordError(
+        getErrorMessage(error, "Invalid username or password.")
+      );
     }
   };
 
   return (
     <AuthContext.Provider
       value={{
-        formData,
-        handleChange,
+        signupData,
+        loginData,
+        handleSignupChange,
+        handleLoginChange,
         handleSubmit,
         handleLogin,
         usernameStatus,
@@ -196,3 +280,4 @@ const AuthProvider = ({ children }) => {
 };
 
 export default AuthProvider;
+

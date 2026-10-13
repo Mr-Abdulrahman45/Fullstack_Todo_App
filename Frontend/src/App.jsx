@@ -1,23 +1,35 @@
-import React from 'react'
-import Navbar from './assets/components/Navbar'
-import { Routes, Route } from 'react-router-dom'
-import Dashboard from './assets/pages/Dashboard'
-import TasksPage from './assets/pages/TasksPage'
-import Profile from './assets/pages/Profile'
-import Login from './assets/pages/LoginPage'
-import Signup from './assets/pages/SignupPage'
-import ProtectedRoute from './assets/pages/ProtectedRoute'
-import Forgot_password from './assets/pages/Forgot_password'
-import PublicRoute from './assets/pages/PublicRoute'
-
+import React from "react";
+import Navbar from "./assets/components/Navbar";
+import { Routes, Route } from "react-router-dom";
+import Dashboard from "./assets/pages/Dashboard";
+import TasksPage from "./assets/pages/TasksPage";
+import Profile from "./assets/pages/Profile";
+import Login from "./assets/pages/LoginPage";
+import Signup from "./assets/pages/SignupPage";
+import ProtectedRoute from "./assets/pages/ProtectedRoute";
+import Forgot_password from "./assets/pages/Forgot_password";
+import PublicRoute from "./assets/pages/PublicRoute";
 
 const App = () => {
   return (
     <>
-
       <Routes>
-        <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route
+          path="/signup"
+          element={
+            <PublicRoute>
+              <Signup />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
 
         <Route
           path="/"
@@ -51,16 +63,15 @@ const App = () => {
         <Route
           path="/forgot-password"
           element={
-            <>
+            <PublicRoute>
               <Navbar />
               <Forgot_password />
-            </>
+            </PublicRoute>
           }
         />
-
       </Routes>
     </>
-  )
-}
+  );
+};
 
-export default App
+export default App;

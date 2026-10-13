@@ -45,7 +45,7 @@ const TaskProvider = ({ children }) => {
 
       setTasks((prev) => [
         ...prev,
-        response.data,
+        response.data || { title }
       ]);
     } catch (error) {
       console.log(
