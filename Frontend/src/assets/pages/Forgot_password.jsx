@@ -11,6 +11,14 @@ const Forgot_password = () => {
   const [resultMsg, setResultMsg] = useState("");
   const [status, setStatus] = useState("initial");
 
+
+
+  const popupHide = ()=>{
+    setTimeout(() => {
+      setResultMsg("")
+      setError("")
+    }, 4000);
+  }
   const handleSubmit = async () => {
     if (!email) return;
     try {
@@ -19,29 +27,37 @@ const Forgot_password = () => {
       const response = await api.post("forgot-password/", { email });
       setResultMsg(response.data.message);
       setStatus("otp_sent");
+      popupHide()
     } catch (err) {
       console.log(err);
       const errorData = err.response?.data;
       setError(
         errorData?.error || errorData?.email?.[0] || "Something went wrong.",
       );
+      popupHide()
     }
   };
 
   const verifyOtp = async () => {
     if (!otp) return;
-    else if (otp.length !== 6) setError("Enter invalid otp..");
+    else if (otp.length !== 6 ){
+      setError("Enter invalid otp..");
+      popupHide()
+      return;
+    }
     try {
       setError("");
       setResultMsg("");
       const response = await api.post("verify-otp/", { email, otp });
       setResultMsg(response.data.message);
       setStatus("otp_verified");
+      popupHide()
     } catch (err) {
       const errorData = err.response?.data;
       setError(errorData?.error || "Invalid or expired OTP.");
-    }
-  };
+      popupHide()
+  }
+};
 
   const handleResetPassword = async () => {
 
@@ -70,15 +86,18 @@ const Forgot_password = () => {
       });
       setResultMsg(response.data.message || "Password reset successfully!");
       setStatus("completed");
+      popupHide()
     } catch (err) {
       const errorData = err.response?.data;
       setError(errorData?.error || "Failed to reset password.");
+      popupHide()
     }
   };
 
   return (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
     <div className="w-full flex justify-center items-center px-4 py-8">
-      <div className="w-[450px] max-w-full flex flex-col items-center gap-5 bg-gray-800 rounded-2xl p-8 shadow-xl text-white border border-gray-700/50">
+      <div className="w-96 max-w-full flex flex-col items-center gap-5 bg-gray-800 rounded-2xl p-8 shadow-xl text-white border border-gray-700/50">
         {error && (
           <p className="text-red-400 text-sm bg-red-500/10 w-full p-3 rounded-xl text-center border border-red-500/20 font-medium">
             {error}
@@ -167,6 +186,7 @@ const Forgot_password = () => {
           </Link>
         )}
       </div>
+    </div>
     </div>
   );
 };

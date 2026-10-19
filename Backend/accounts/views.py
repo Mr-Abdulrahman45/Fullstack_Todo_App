@@ -68,18 +68,16 @@ def check_username(request):
 def user_profile(request):
     user = request.user
 
-    profile = UserProfile.objects.filter(user=user).first()
-
     profile, _ = UserProfile.objects.get_or_create(user=user)
 
-    if profile and profile.profile_picture:
+    if profile.profile_picture and profile.picture_status != 'default':
         picture = request.build_absolute_uri(profile.profile_picture.url)
-        picture_status = "updated"
-
+        picture_status = profile.picture_status
     else:
-        picture = '/media/profile_pictures/default.jpg'
-        picture_status = "default"
-
+        picture = request.build_absolute_uri(
+            '/media/profile_pictures/default.jpg'
+        )
+        picture_status = 'default'
 
     return Response({
         'id': user.id,
@@ -88,7 +86,7 @@ def user_profile(request):
         'first_name': user.first_name,
         'last_name': user.last_name,
         'profile_picture': picture,
-        'picture_status': picture_status
+        'picture_status': picture_status,
     })
 
   
@@ -98,8 +96,6 @@ def user_profile(request):
 def update_user_profile(request):
     if request.method == 'PATCH':
         user = request.user
-        print(request.content_type)
-        print(request.data)
         serializer = UserProfileUpdateSerializer(user, data=request.data,)
     
         if serializer.is_valid():
@@ -111,31 +107,58 @@ def update_user_profile(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['PATCH'])
+@api_view(['PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def update_profile_picture(request):
-    profile = UserProfile.objects.get(
-        user=request.user
+    try:
+        profile = UserProfile.objects.get(user=request.user)
+
+    except UserProfile.DoesNotExist:
+        return Response(
+            {"error": "Profile not found"},
+            status=status.HTTP_404_NOT_FOUND
     )
 
-    serializer = profile_picture_serializer(
-        profile,
-        data=request.data,
-    )
+    if request.method == 'PATCH':
+        serializer = profile_picture_serializer(
+            profile,
+            data=request.data,
+            partial=True
+        )
 
-    if serializer.is_valid():
-        serializer.save()
+        if serializer.is_valid():
+            serializer.save()
+            profile.picture_status = 'updated'
+            profile.save(update_fields=['picture_status'])
+
+            return Response({
+                "message": "Profile picture updated successfully",
+                "profile_picture": request.build_absolute_uri(
+                    profile.profile_picture.url
+                ),
+                "picture_status": profile.picture_status
+            }, status=status.HTTP_200_OK)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    elif request.method == 'DELETE':
+        if profile.profile_picture:
+            profile.profile_picture.delete(save=False)
+
+        profile.profile_picture = 'profile_pictures/default.jpg'
+        profile.picture_status = 'default'
+        profile.save(update_fields=['profile_picture', 'picture_status'])
+
         return Response({
-            "message": "Profile picture updated successfully",
+            "message": "Profile picture deleted successfully",
             "profile_picture": request.build_absolute_uri(
-                serializer.instance.profile_picture.url
-            )
+                profile.profile_picture.url
+            ),
+            "picture_status": profile.picture_status
         }, status=status.HTTP_200_OK)
-
-    return Response(
-        serializer.errors,
-        status=status.HTTP_400_BAD_REQUEST
-    )
 
 
 

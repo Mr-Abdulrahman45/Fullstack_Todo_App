@@ -9,6 +9,8 @@ import Signup from "./assets/pages/SignupPage";
 import ProtectedRoute from "./assets/pages/ProtectedRoute";
 import Forgot_password from "./assets/pages/Forgot_password";
 import PublicRoute from "./assets/pages/PublicRoute";
+import NotFound from "./assets/pages/NotFound";
+import ViewProfilePicture from "./assets/pages/ViewProfilePicture";
 
 const App = () => {
   return (
@@ -64,13 +66,15 @@ const App = () => {
           path="/forgot-password"
           element={
             <PublicRoute>
-              <Navbar />
               <Forgot_password />
             </PublicRoute>
           }
         />
+        <Route path="/view-profile-picture" element={<ViewProfilePicture/>} />
+        <Route path="*" element={<NotFound/>}/>
       </Routes>
     </>
+    
   );
 };
 

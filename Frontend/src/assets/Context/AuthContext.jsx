@@ -19,6 +19,137 @@ const AuthProvider = ({ children }) => {
     username: "",
     password: "",
   });
+  // profile data for nav
+  const [loading, setLoading] = useState(true);
+  const [profilePic, setProfilePic] = useState({
+    url: null,
+    status: null,
+  });
+  const [user, setUser] = useState(null);
+  const [showPictureOptions, setShowPictureOptions] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [editProfileData, setEditProfileData] = useState({
+    first_name: "",
+    email: "",
+  });
+  const access_token = localStorage.getItem('access_token')
+  const getProfile = async () => {
+    try {
+      setLoading(true);
+
+      const response = await api.get("profile/");
+
+      setUser(response.data);
+      setProfilePic({
+        url: response.data.profile_picture || "",
+        status: response.data.picture_status || "default",
+      });
+
+      setEditProfileData({
+        first_name: response.data.first_name || "",
+        email: response.data.email || "",
+      });
+    } catch (error) {
+      console.log("Profile Error:", error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+  if (access_token) {
+    getProfile();
+  }
+}, [access_token]);
+
+  const showInlineMessage = (type, text) => {
+    if (type === "success") {
+      setSuccessMsg(text);
+      setErrorMsg("");
+    } else {
+      setErrorMsg(text);
+      setSuccessMsg("");
+    }
+
+    setTimeout(() => {
+      setSuccessMsg("");
+      setErrorMsg("");
+    }, 4000);
+  };
+
+  const handlePictureUpload = async (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showInlineMessage("error", "Please select an image file.");
+      e.target.value = "";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("profile_picture", file);
+
+    try {
+      const response = await api.patch("update-profile-picture/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const imageUrl = response.data.profile_picture;
+      const imageStaus = response.data.picture_status;
+
+      setProfilePic({
+        url: imageUrl,
+        status: imageStaus,
+      });
+      setUser((prev) => ({
+        ...prev,
+        profile_picture: imageUrl,
+      }));
+
+      setShowPictureOptions(false);
+      showInlineMessage("success", "Profile picture updated!");
+    } catch (error) {
+      if (error.response?.status === 400) {
+        showInlineMessage("error", "Please upload a valid image file.");
+      }
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  const delete_profile_picture = async () => {
+    if (profilePic.status === "default") {
+      showInlineMessage("error", "No profile picture available.");
+      setShowPictureOptions(false);
+      return;
+    }
+
+    try {
+      const response = await api.delete("update-profile-picture/");
+      const imageUrl = response.data.profile_picture;
+      const imageStatus = response.data.picture_status;
+      console.log(response.data.profile_picture)
+      setProfilePic({
+        url: imageUrl,
+        status: imageStatus,
+      });
+      setUser((prev) => ({
+        ...prev,
+        profile_picture: imageUrl,
+        picture_status: imageStatus,
+      }));
+
+      setShowPictureOptions(false);
+      showInlineMessage("success", "Profile picture deleted successfully.");
+    } catch (error) {
+      showInlineMessage("error", "Failed to delete profile picture.");
+    }
+  };
 
   const [usernameStatus, setUsernameStatus] = useState("");
   const [usernameChecking, setUsernameChecking] = useState(false);
@@ -46,7 +177,6 @@ const AuthProvider = ({ children }) => {
     setPasswordError("");
   };
 
-  
   useEffect(() => {
     const username = signupData.username.trim();
 
@@ -57,7 +187,9 @@ const AuthProvider = ({ children }) => {
     }
 
     if (username.length < 4) {
-      setUsernameStatus("invalid , username must be contain ateleast 4 chracters ");
+      setUsernameStatus(
+        "invalid , username must be contain ateleast 4 chracters ",
+      );
       setUsernameChecking(false);
       return;
     }
@@ -74,15 +206,13 @@ const AuthProvider = ({ children }) => {
         });
 
         if (!cancelled) {
-          setUsernameStatus(
-            response.data.available ? "available" : "taken"
-          );
+          setUsernameStatus(response.data.available ? "available" : "taken");
         }
       } catch (error) {
         if (!cancelled) {
           console.error(
             "Username Check Error:",
-            error.response?.data || error.message
+            error.response?.data || error.message,
           );
 
           setUsernameStatus("error");
@@ -211,12 +341,10 @@ const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error(
         "Registration Error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
-      setPasswordError(
-        getErrorMessage(error, "Registration failed.")
-      );
+      setPasswordError(getErrorMessage(error, "Registration failed."));
     }
   };
 
@@ -249,14 +377,9 @@ const AuthProvider = ({ children }) => {
 
       navigate("/");
     } catch (error) {
-      console.error(
-        "Login Error:",
-        error.response?.data || error.message
-      );
+      console.error("Login Error:", error.response?.data || error.message);
 
-      setPasswordError(
-        getErrorMessage(error, "Invalid username or password.")
-      );
+      setPasswordError(getErrorMessage(error, "Invalid username or password."));
     }
   };
 
@@ -272,6 +395,23 @@ const AuthProvider = ({ children }) => {
         usernameStatus,
         usernameChecking,
         passwordError,
+        profilePic,
+        setProfilePic,
+        user,
+        setUser,
+        editProfileData,
+        setEditProfileData,
+        showInlineMessage,
+        showPictureOptions,
+        setShowPictureOptions,
+        loading,
+        setLoading,
+        handlePictureUpload,
+        errorMsg,
+        setErrorMsg,
+        successMsg,
+        setSuccessMsg,
+        delete_profile_picture,
       }}
     >
       {children}
@@ -280,4 +420,3 @@ const AuthProvider = ({ children }) => {
 };
 
 export default AuthProvider;
-

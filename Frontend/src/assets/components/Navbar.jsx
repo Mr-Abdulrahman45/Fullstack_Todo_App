@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../Context/AuthContext";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const {profilePic} = useContext(AuthContext)
 
   return (
     <>
@@ -10,7 +12,7 @@ const Navbar = () => {
       <nav className="hidden md:flex sticky top-0 z-50 items-center justify-between px-6 py-3 bg-gray-800 text-white shadow">
 
         <div className="text-xl font-bold">
-          AI Study Planner
+          Todo App
         </div>
 
         <div className="flex items-center gap-6">
@@ -24,7 +26,7 @@ const Navbar = () => {
 
           <Link to="/profile">
             <img
-              src="https://i.pravatar.cc/40"
+              src={profilePic.url}
               alt="Profile"
               className="w-10 h-10 rounded-full border-2 border-gray-600 hover:border-blue-400 transition"
             />

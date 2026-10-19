@@ -2,26 +2,37 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { TaskContext } from "../Context/TaskContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
+import { AuthContext } from "../Context/AuthContext";
 
 const Profile = () => {
+  const {
+    profilePic,
+    user,
+    loading,
+    handlePictureUpload,
+    handleUpdateProfile,
+    editProfileData,
+    setEditProfileData,
+    showPictureOptions,
+    setShowPictureOptions,
+    successMsg,
+    errorMsg,
+    delete_profile_picture,
+    showInlineMessage,
+  } = useContext(AuthContext);
+
   const { totalTasks, completedTasks, progress } = useContext(TaskContext);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showPictureOptions, setShowPictureOptions] = useState(false);
-  const [profilePic, setProfilePic] = useState(null);
 
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-
-  const [editData, setEditData] = useState({
-    first_name: "",
-    email: "",
+  // Separate Show/Hide state for each password field
+  const [showPasswords, setShowPasswords] = useState({
+    old_password: false,
+    new_password: false,
+    confirm_password: false,
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -30,48 +41,9 @@ const Profile = () => {
     confirm_password: "",
   });
 
-  const showInlineMessage = (type, text) => {
-    if (type === "success") {
-      setSuccessMsg(text);
-      setErrorMsg("");
-    } else {
-      setErrorMsg(text);
-      setSuccessMsg("");
-    }
-
-    setTimeout(() => {
-      setSuccessMsg("");
-      setErrorMsg("");
-    }, 4000);
-  };
-
-  const getProfile = async () => {
-    try {
-      setLoading(true);
-
-      const response = await api.get("profile/");
-
-      setUser(response.data);
-      setProfilePic(response.data.profile_picture || null);
-
-      setEditData({
-        first_name: response.data.first_name || "",
-        email: response.data.email || "",
-      });
-    } catch (error) {
-      console.log("Profile Error:", error.response?.data || error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getProfile();
-  }, []);
-
   const handleEditChange = (e) => {
-    setEditData({
-      ...editData,
+    setEditProfileData({
+      ...editProfileData,
       [e.target.name]: e.target.value,
     });
   };
@@ -83,44 +55,11 @@ const Profile = () => {
     });
   };
 
-  const handlePictureUpload = async (e) => {
-    const file = e.target.files[0];
-
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      showInlineMessage("error", "Please select an image file.");
-      e.target.value = "";
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("profile_picture", file);
-
-    try {
-      const response = await api.patch("update-profile-picture/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      const imageUrl = response.data.profile_picture;
-
-      setProfilePic(imageUrl);
-      setUser((prev) => ({
-        ...prev,
-        profile_picture: imageUrl,
-      }));
-
-      setShowPictureOptions(false);
-      showInlineMessage("success", "Profile picture updated!");
-    } catch (error) {
-      if (error.response?.status === 400) {
-        showInlineMessage("error", "Please upload a valid image file.");
-      }
-    } finally {
-      e.target.value = "";
-    }
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
   };
 
   const handleChangePassword = async (e) => {
@@ -151,6 +90,12 @@ const Profile = () => {
       });
 
       setShowPassword(false);
+
+      setShowPasswords({
+        old_password: false,
+        new_password: false,
+        confirm_password: false,
+      });
     } catch (error) {
       const serverError = error.response?.data;
       const msg = serverError
@@ -184,7 +129,7 @@ const Profile = () => {
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="relative">
               <img
-                src={profilePic}
+                src={profilePic.url}
                 alt="Profile"
                 onClick={() => setShowPictureOptions(!showPictureOptions)}
                 className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow cursor-pointer"
@@ -192,11 +137,14 @@ const Profile = () => {
 
               {showPictureOptions && (
                 <div className="absolute top-full left-0 mt-2 w-32 bg-gray-700 rounded-lg shadow-lg p-2 z-10 flex flex-col gap-2">
+                  
                   <button
                     type="button"
                     onClick={() => {
-                      if (profilePic) {
-                        window.open(profilePic, "_self");
+                      if (profilePic.status === "updated" ) {
+                        navigate("/view-profile-picture", {
+                          state: { pictureUrl: profilePic.url },
+                        });
                       } else {
                         showInlineMessage(
                           "error",
@@ -210,13 +158,24 @@ const Profile = () => {
                   >
                     View
                   </button>
-
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                      setShowPictureOptions(false);
+                    }}
                     className="text-left px-3 py-2 rounded hover:bg-gray-600"
                   >
                     Change
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      delete_profile_picture();
+                    }}
+                    className="text-left px-3 py-2 rounded hover:bg-gray-600 text-red-400"
+                  >
+                    Delete
                   </button>
                 </div>
               )}
@@ -282,7 +241,7 @@ const Profile = () => {
                 setShowPassword(!showPassword);
                 setIsEditing(false);
               }}
-              className="bg-yellow-600 px-5 py-3 rounded-lg hover:bg-yellow-700 text-black font-semibold transition"
+              className="bg-yellow-600 px-5 py-3 rounded-lg hover:bg-yellow-700 text-white font-semibold transition"
             >
               Change Password
             </button>
@@ -313,7 +272,7 @@ const Profile = () => {
                 <input
                   type="text"
                   name="first_name"
-                  value={editData.first_name}
+                  value={editProfileData.first_name}
                   onChange={handleEditChange}
                   className="w-full bg-gray-800 p-2.5 rounded border border-gray-600 outline-none focus:border-blue-500"
                   required
@@ -328,7 +287,7 @@ const Profile = () => {
                 <input
                   type="email"
                   name="email"
-                  value={editData.email}
+                  value={editProfileData.email}
                   onChange={handleEditChange}
                   className="w-full bg-gray-800 p-2.5 rounded border border-gray-600 outline-none focus:border-blue-500"
                   required
@@ -354,49 +313,199 @@ const Profile = () => {
                 Change Password Securely
               </h3>
 
+              {/* Current Password */}
               <div>
                 <label className="block text-sm text-gray-300 mb-1">
                   Current Password
                 </label>
 
-                <input
-                  type="password"
-                  name="old_password"
-                  value={passwordData.old_password}
-                  onChange={handlePasswordChange}
-                  className="w-full bg-gray-800 p-2.5 rounded border border-gray-600 outline-none focus:border-yellow-500"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPasswords.old_password ? "text" : "password"}
+                    name="old_password"
+                    placeholder="Current password..."
+                    value={passwordData.old_password}
+                    onChange={handlePasswordChange}
+                    className="w-full bg-gray-800 p-2.5 pr-12 rounded border border-gray-600 outline-none focus:border-yellow-500"
+                    autoComplete="current-password"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => togglePasswordVisibility("old_password")}
+                    aria-label={
+                      showPasswords.old_password
+                        ? "Hide current password"
+                        : "Show current password"
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-yellow-400"
+                  >
+                    {showPasswords.old_password ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c5 0 9 7 9 7a13.16 13.16 0 0 1-2.16 2.57" />
+                        <path d="M6.61 6.61C3.5 8.37 2 12 2 12s4 7 10 7a9.77 9.77 0 0 0 5.39-1.61" />
+                        <line x1="2" y1="2" x2="22" y2="22" />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
+              {/* New Password */}
               <div>
                 <label className="block text-sm text-gray-300 mb-1">
                   New Password
                 </label>
 
-                <input
-                  type="password"
-                  name="new_password"
-                  value={passwordData.new_password}
-                  onChange={handlePasswordChange}
-                  className="w-full bg-gray-800 p-2.5 rounded border border-gray-600 outline-none focus:border-yellow-500"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPasswords.new_password ? "text" : "password"}
+                    name="new_password"
+                    placeholder="New password..."
+                    value={passwordData.new_password}
+                    onChange={handlePasswordChange}
+                    className="w-full bg-gray-800 p-2.5 pr-12 rounded border border-gray-600 outline-none focus:border-yellow-500"
+                    autoComplete="new-password"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => togglePasswordVisibility("new_password")}
+                    aria-label={
+                      showPasswords.new_password
+                        ? "Hide new password"
+                        : "Show new password"
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-yellow-400"
+                  >
+                    {showPasswords.new_password ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c5 0 9 7 9 7a13.16 13.16 0 0 1-2.16 2.57" />
+                        <path d="M6.61 6.61C3.5 8.37 2 12 2 12s4 7 10 7a9.77 9.77 0 0 0 5.39-1.61" />
+                        <line x1="2" y1="2" x2="22" y2="22" />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
+              {/* Confirm New Password */}
               <div>
                 <label className="block text-sm text-gray-300 mb-1">
                   Confirm New Password
                 </label>
 
-                <input
-                  type="password"
-                  name="confirm_password"
-                  value={passwordData.confirm_password}
-                  onChange={handlePasswordChange}
-                  className="w-full bg-gray-800 p-2.5 rounded border border-gray-600 outline-none focus:border-yellow-500"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPasswords.confirm_password ? "text" : "password"}
+                    name="confirm_password"
+                    placeholder="Confirm new password..."
+                    value={passwordData.confirm_password}
+                    onChange={handlePasswordChange}
+                    className="w-full bg-gray-800 p-2.5 pr-12 rounded border border-gray-600 outline-none focus:border-yellow-500"
+                    autoComplete="new-password"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => togglePasswordVisibility("confirm_password")}
+                    aria-label={
+                      showPasswords.confirm_password
+                        ? "Hide confirm password"
+                        : "Show confirm password"
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-yellow-400"
+                  >
+                    {showPasswords.confirm_password ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c5 0 9 7 9 7a13.16 13.16 0 0 1-2.16 2.57" />
+                        <path d="M6.61 6.61C3.5 8.37 2 12 2 12s4 7 10 7a9.77 9.77 0 0 0 5.39-1.61" />
+                        <line x1="2" y1="2" x2="22" y2="22" />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button

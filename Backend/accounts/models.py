@@ -14,4 +14,9 @@ class PasswordResetOTP(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True,  default='profile_pictures/default.jpg')
+    profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True,  default="profile_pictures/default.jpg")
+    picture_status=models.CharField(max_length=10,default="default")
+
+    def __str__(self):
+        return self.user.username
+
