@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'maani.pythonanywhere.com']
 
 
 # Application definition
@@ -140,7 +140,11 @@ REST_FRAMEWORK = {
 }
 
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://localhost:3000']
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://fullstack-todo-on31rm3wz-me-8a82.vercel.app',
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
