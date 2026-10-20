@@ -47,7 +47,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          "http://127.0.0.1:8000/api/token/refresh/",
+          "http://https://maani.pythonanywhere.com/api/token/refresh/",
           {
             refresh: refreshToken,
           }
