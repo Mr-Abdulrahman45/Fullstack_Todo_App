@@ -144,6 +144,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://fullstack-todo-on31rm3wz-me-8a82.vercel.app',
+    'https://fullstack-todo-mi1tzzh1q-me-8a82.vercel.app',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
